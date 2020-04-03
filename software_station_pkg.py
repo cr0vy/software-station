@@ -39,6 +39,35 @@ def installed_package_list():
     return lst
 
 
+def selected_package_description(package: str):
+    cmd = "pkg query '%e' " + package
+    pkg_out = Popen(cmd, shell=True, stdout=PIPE, close_fds=True,
+                    universal_newlines=True, encoding='utf-8')
+    output = pkg_out.stdout.read()
+
+    return output
+
+
+def selected_package_dependencies(package: str):
+    cmd = "pkg query '%dn' " + package
+    pkg_out = Popen(cmd, shell=True, stdout=PIPE, close_fds=True,
+                    universal_newlines=True, encoding='utf-8')
+    lst = list(set(pkg_out.stdout.read().splitlines()))
+    lst.sort()
+    print(cmd)
+    print(lst)
+    return lst
+
+
+def selected_package_rdependencies(package: str):
+    cmd = "pkg query '%rn' " + package
+    pkg_out = Popen(cmd, shell=True, stdout=PIPE, close_fds=True,
+                    universal_newlines=True, encoding='utf-8')
+    lst = list(set(pkg_out.stdout.read().splitlines()))
+    lst = lst.sort()
+    return lst
+
+
 def available_package_dictionary(origin_list):
     pkg_list = available_package_list()
     installed_pkg_list = installed_package_list()

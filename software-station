@@ -43,6 +43,8 @@ from software_station_pkg import available_package_dictionary
 from software_station_pkg import installed_package_origin
 from software_station_pkg import installed_package_dictionary, delete_packages
 from software_station_pkg import install_packages, fetch_packages
+from software_station_pkg import selected_package_description
+from software_station_pkg import selected_package_dependencies, selected_package_rdependencies
 from software_station_xpm import xpmPackageCategory
 
 global pkg_to_install
@@ -133,7 +135,9 @@ class TableWindow(Gtk.Window):
         self.mainstack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT)
         self.box1.pack_start(self.mainstack, True, True, 0)
         mainwin = self.MainBook()
+        descwin = self.DescriptionWindow()
         self.mainstack.add_named(mainwin, "mainwin")
+        self.mainstack.add_named(descwin, "descwin")
         self.pkg_statistic = Gtk.Label()
         self.pkg_statistic.set_use_markup(True)
         self.pkg_statistic.set_xalign(0.0)
@@ -320,6 +324,7 @@ class TableWindow(Gtk.Window):
         selection = self.pkgtreeview.get_selection()
         (model, iter) = selection.get_selected()
         print(model[iter][1])
+        self.show_description_window(model[iter][1])
 
     def search_release(self, widget, event):
         self.searchs = widget.get_text()
@@ -485,6 +490,64 @@ class TableWindow(Gtk.Window):
         self.table.attach(pkg_sw, 2, 10, 0, 12)
         self.show()
         return self.table
+
+    def previous_button_clicked(self, event):
+        self.mainstack.set_visible_child_name("mainwin")
+        self.previousbutton.set_sensitive(False)
+
+    def show_description_window(self, name: str):
+        self.mainstack.set_visible_child_name("descwin")
+        self.previousbutton.set_sensitive(True)
+        self.previousbutton.connect("clicked", self.previous_button_clicked)
+        self.set_description_window(name)
+
+    def set_description_window(self, package: str):
+        description = selected_package_description(package)
+        dependencies = "Dependencies:\n"
+        try:
+            for dependency in selected_package_dependencies(package):
+                dependencies += dependency + "\n"
+        except TypeError:
+            pass
+
+        rdependencies = "Reverse dependencies:\n"
+        try:
+            for rdependency in selected_package_rdependencies(package):
+                rdependencies += rdependency + "\n"
+        except TypeError:
+            pass
+
+        self.app_label.set_text(package)
+        self.description_label.set_text(description)
+        self.dependencies_label.set_text(dependencies + "\n" + rdependencies)
+
+    def DescriptionWindow(self):
+        self.description_sw = Gtk.ScrolledWindow()
+        self.description_sw.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        self.description_sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+
+        self.description_box = Gtk.VBox()
+        self.description_sw.add(self.description_box)
+
+        self.app_info_box = Gtk.HBox()
+        pixbuf = Gtk.IconTheme.get_default().load_icon('emblem-package', 42, 0)
+        self.app_icon = Gtk.Image.new_from_pixbuf(pixbuf)
+        self.app_label = Gtk.Label()
+        self.app_info_box.pack_start(self.app_icon, 0, 0, 0)
+        self.app_info_box.pack_start(self.app_label, 0, 0, 0)
+        hr = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        hr2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+
+        self.description_label = Gtk.Label()
+        self.dependencies_label = Gtk.Label()
+
+        self.description_box.pack_start(self.app_info_box, 0, 0, 0)
+        self.description_box.pack_start(hr, 0, 0, 0)
+        self.description_box.pack_start(self.description_label, 1, 1, 1)
+        self.description_box.pack_start(hr2, 0, 0, 0)
+        self.description_box.pack_start(self.dependencies_label, 1, 1, 1)
+
+        return self.description_sw
 
 
 class not_root(Gtk.Window):
